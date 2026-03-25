@@ -1,0 +1,4 @@
+# YOLOv8 via Roboflow inference; webcam + WebSocket client
+inference[cli]>=0.9.0
+opencv-python-headless>=4.8.0
+websocket-client>=1.6.0

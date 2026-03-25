@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tetris Hands</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Webcam background only when in-game; hidden on menu -->
+  <div id="bgLayer" class="bg-layer hidden">
+    <video id="webcamBg" class="webcam-video-no-mirror" autoplay playsinline muted></video>
+    <div id="bgOverlay" class="bg-overlay"></div>
+  </div>
+
+  <!-- IMPORTANT: dedicated, always-alive CV input video (never displayed) -->
+  <video id="cvInput" autoplay playsinline muted class="cv-input-video"></video>
+
+  <!-- Phaser game canvas -->
+  <div id="gameContainer" class="game-container"></div>
+
+  <!-- ========== MENU (default on load) — pure black, no webcam ========== -->
+  <div id="screen-menu" class="screen screen-menu">
+    <div class="menu-box">
+      <h1 class="menu-title">TETRIS HANDS</h1>
+      <p id="menuCameraBlocked" class="menu-camera-blocked hidden">Camera blocked — keyboard mode</p>
+      <button type="button" id="btnSingle" class="menu-btn">SINGLE PLAYER</button>
+      <button type="button" id="btnMulti" class="menu-btn">MULTIPLAYER</button>
+      <button type="button" id="btnHowToPlay" class="menu-btn menu-btn-secondary">HOW TO PLAY</button>
+    </div>
+  </div>
+
+  <!-- ========== HOW TO PLAY overlay ========== -->
+  <div id="howToPlayOverlay" class="overlay hidden">
+    <div class="overlay-box overlay-box-wide">
+      <h2>HOW TO PLAY</h2>
+      <p><strong>Keyboard:</strong> Arrow keys move/rotate/soft drop, Space = hard drop, P = pause, R = restart, Esc = exit.</p>
+      <p><strong>Hands:</strong> Position left/right = move; wrist twist = rotate CW/CCW; wave down = soft drop; open palm hold = hard drop; V sign hold = pause.</p>
+      <button type="button" id="btnHowToPlayClose" class="menu-btn">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- ========== SINGLE PLAYER game screen ========== -->
+  <div id="screen-single" class="screen hidden">
+    <div class="single-layout">
+      <div class="single-left">
+        <div id="hudSingle" class="hud">
+          <div class="hud-row"><span>SCORE</span><b id="scoreEl">0</b></div>
+          <div class="hud-row"><span>LINES</span><b id="linesEl">0</b></div>
+          <div class="hud-row"><span>LEVEL</span><b id="levelEl">1</b></div>
+          <div class="next-label">NEXT</div>
+          <canvas id="nextCanvas" class="next-canvas" width="80" height="80"></canvas>
+        </div>
+
+        <div class="hud-buttons">
+          <button type="button" id="btnStartSingle" class="hud-btn hud-btn-start">START</button>
+          <button type="button" id="btnPause" class="hud-btn">PAUSE</button>
+          <button type="button" id="btnRestart" class="hud-btn">RESTART</button>
+          <button type="button" id="btnExitSingle" class="hud-btn">EXIT</button>
+        </div>
+      </div>
+
+      <div id="webcamPreviewSingle" class="webcam-preview-panel">
+        <div class="webcam-preview-label">WEBCAM PREVIEW</div>
+        <p class="webcam-hint">Camera starts when you enter this screen. Allow access when prompted.</p>
+        <div class="webcam-camera-row">
+          <label for="cameraSelectSingle">Select Camera:</label>
+          <select id="cameraSelectSingle" class="camera-select" aria-label="Select camera"></select>
+        </div>
+        <div class="webcam-video-wrap">
+          <video id="webcamPreview" class="webcam-video-no-mirror" autoplay playsinline muted></video>
+          <canvas id="handsOverlaySingle" class="hands-overlay" aria-hidden="true"></canvas>
+        </div>
+        <div id="webcamDebugSingle" class="webcam-debug-overlay">
+          <span id="webcamDebugStatus">—</span> · <span id="webcamDebugDevice">—</span> · <span id="webcamDebugFps">— FPS</span> · <span id="webcamDebugHands">Hands: 0</span>
+        </div>
+        <div id="webcamPanelStatus" class="webcam-panel-status hidden">Camera blocked — keyboard mode enabled</div>
+      </div>
+    </div>
+
+    <!-- Press start overlay -->
+    <div id="startOverlaySingle" class="start-overlay">
+      <span class="start-overlay-label">Press START to begin</span>
+    </div>
+
+    <div id="cvStatusSingle" class="cv-status hidden"></div>
+
+    <div id="debugHud" class="debug-hud hidden">
+      <div>rawX: <span id="dbRawX">—</span> emaX: <span id="dbEmaX">—</span> mirror: <span id="dbMirror">—</span></div>
+      <div>wristAngle: <span id="dbWristAngle">—</span> rotateTriggered: <span id="dbRotateTriggered">—</span> softDropActive: <span id="dbSoftDropActive">—</span></div>
+      <div>lastHandSeenAge: <span id="dbHandAge">—</span> zone: <span id="dbZone">—</span> fps: <span id="dbFps">—</span> <span id="dbCvStatus">—</span></div>
+    </div>
+  </div>
+
+  <!-- ========== MULTIPLAYER LOBBY ========== -->
+  <div id="screen-multi-lobby" class="screen hidden">
+    <div class="menu-box">
+      <h2 class="menu-title-small">MULTIPLAYER</h2>
+      <p class="lobby-note">Both players must be on the same Wi-Fi network.</p>
+      <button type="button" id="btnHost" class="menu-btn">HOST GAME</button>
+      <div class="join-row">
+        <input id="roomCodeInput" type="text" placeholder="Room code" maxlength="6" />
+        <button type="button" id="btnJoin" class="menu-btn">JOIN GAME</button>
+      </div>
+      <div id="lobbyStatus" class="lobby-status"></div>
+      <div id="lobbyLanUrl" class="lobby-lan hidden"></div>
+      <div id="lobbyRoomCode" class="lobby-room-code hidden"></div>
+      <button type="button" id="btnStartMulti" class="menu-btn hidden">START GAME (HOST)</button>
+      <button type="button" id="btnBackLobby" class="menu-btn menu-btn-secondary">BACK</button>
+    </div>
+  </div>
+
+  <!-- ========== MULTIPLAYER GAME (two boards) ========== -->
+  <div id="screen-multi-game" class="screen hidden">
+    <div class="multi-layout">
+      <div class="multi-board-wrap">
+        <div class="multi-hud">
+          <span>YOU</span>
+          <span id="mpScore1">0</span> / <span id="mpLines1">0</span>
+        </div>
+
+        <div id="webcamPreviewP1" class="webcam-preview-panel multi-preview">
+          <div class="webcam-preview-label">Your webcam</div>
+          <div class="webcam-camera-row">
+            <label for="cameraSelectMulti">Select Camera:</label>
+            <select id="cameraSelectMulti" class="camera-select" aria-label="Select camera"></select>
+          </div>
+          <div class="webcam-video-wrap">
+            <video id="webcamPreviewMulti" class="webcam-video-no-mirror" autoplay playsinline muted></video>
+            <canvas id="handsOverlayMulti" class="hands-overlay" aria-hidden="true"></canvas>
+          </div>
+          <div id="webcamDebugMulti" class="webcam-debug-overlay">
+            <span id="webcamDebugStatusMulti">—</span> · <span id="webcamDebugDeviceMulti">—</span> · <span id="webcamDebugFpsMulti">— FPS</span> · <span id="webcamDebugHandsMulti">Hands: 0</span>
+          </div>
+          <div id="webcamPanelStatusMulti" class="webcam-panel-status hidden">Camera blocked — keyboard mode enabled</div>
+        </div>
+      </div>
+
+      <div class="multi-board-wrap">
+        <div class="multi-hud">
+          <span>OPPONENT</span>
+          <span id="mpScore2">0</span> / <span id="mpLines2">0</span>
+        </div>
+
+        <div id="webcamPreviewP2" class="webcam-preview-panel multi-preview">
+          <div class="webcam-preview-label">Opponent webcam not shared</div>
+          <div class="webcam-placeholder"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-buttons multi-buttons">
+      <button type="button" id="btnStartMultiGame" class="hud-btn hud-btn-start hidden">START (HOST)</button>
+      <button type="button" id="btnPauseMulti" class="hud-btn">PAUSE</button>
+      <button type="button" id="btnExitMulti" class="hud-btn">EXIT</button>
+    </div>
+
+    <div id="multiReadyOverlay" class="start-overlay">
+      <span id="multiReadyLabel" class="start-overlay-label">Waiting for host to start</span>
+    </div>
+
+    <div id="cvStatusMulti" class="cv-status hidden"></div>
+  </div>
+
+  <!-- Pause overlay -->
+  <div id="pauseOverlay" class="overlay hidden">
+    <div class="overlay-box">
+      <h2>PAUSED</h2>
+      <p>Press P or click Resume</p>
+      <button type="button" id="btnResume" class="menu-btn">RESUME</button>
+    </div>
+  </div>
+
+  <!-- Game Over overlay -->
+  <div id="gameOverOverlay" class="overlay hidden">
+    <div class="overlay-box">
+      <h2>GAME OVER</h2>
+      <p>Press R to restart or Exit to menu</p>
+      <button type="button" id="btnRestartOverlay" class="menu-btn">RESTART</button>
+      <button type="button" id="btnExitOverlay" class="menu-btn menu-btn-secondary">EXIT</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+
+  <!-- MediaPipe via CDN (reliable) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+  <script src="main.js"></script>
+</body>
+</html>
