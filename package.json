@@ -1,0 +1,18 @@
+{
+    "name": "finger-gun-arena",
+    "version": "1.0.0",
+    "description": "Multiplayer finger gun game using MediaPipe and Phaser 3",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js"
+    },
+    "dependencies": {
+      "express": "^4.18.2",
+      "socket.io": "^4.6.1",
+      "@mediapipe/hands": "^0.4.1675469240",
+      "@mediapipe/camera_utils": "^0.3.1675466862",
+      "@mediapipe/drawing_utils": "^0.3.1675466124"
+    },
+    "license": "MIT"
+  }
+  
